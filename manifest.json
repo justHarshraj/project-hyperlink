@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Project Hyperlink",
+  "version": "1.0",
+  "description": "Unlimited shortcuts and a clean developer workspace.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Project Hyperlink"
+  }
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Hyperlink</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="header">
+        <div class="brand">🔗 Hyperlink</div>
+        <div class="header-actions">
+            <button id="add-link-btn" title="Add link manually">+</button>
+            <button id="save-current-btn">Save Current Page</button>
+        </div>
+    </div>
+
+    <div class="category-tabs-wrapper">
+        <div id="category-tabs" class="category-tabs">
+            </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search your saved links...">
+    </div>
+
+    <div id="shortcut-grid" class="grid-container">
+    </div>
+
+    <div id="link-modal" class="hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">Add New Shortcut</h3>
+            <input type="text" id="link-name" placeholder="Name (e.g., LeetCode)" autocomplete="off">
+            <input type="url" id="link-url" placeholder="URL (e.g., https://leetcode.com)" autocomplete="off">
+            <input type="hidden" id="link-id">
+
+            <div class="modal-actions">
+                <button id="modal-cancel">Cancel</button>
+                <button id="modal-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/newtab.js"></script>
+</body>
+</html>
