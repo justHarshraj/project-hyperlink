@@ -9,12 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const grid = document.getElementById('shortcut-grid');
     const saveBtn = document.getElementById('save-current-btn');
     const searchInput = document.getElementById('search-input');
-    const tabsContainer = document.getElementById('category-tabs');
     const addLinkBtn = document.getElementById('add-link-btn');
 
     let allLinks = [];
-    let categories = [];
-    let activeCategoryId = 'default';
 
     // Modal Elements
     const modal = document.getElementById('link-modal');
@@ -29,36 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. CORE DATA LOGIC ---
     function loadData() {
-        chrome.storage.local.get(['hyperlinks', 'categories', 'activeCategoryId'], (result) => {
+        chrome.storage.local.get(['hyperlinks'], (result) => {
             allLinks = result.hyperlinks || [];
-            categories = result.categories || [{ id: 'default', name: 'General' }];
-            activeCategoryId = result.activeCategoryId || 'default';
-
-            // Migration: Ensure old links have a category
-            let needsSave = false;
-            allLinks.forEach(link => {
-                if (!link.categoryId) {
-                    link.categoryId = 'default';
-                    needsSave = true;
-                }
-            });
-            if (needsSave) chrome.storage.local.set({ hyperlinks: allLinks });
-
-            // Ensure the active category actually exists (in case it was deleted)
-            if (!categories.find(c => c.id === activeCategoryId)) {
-                activeCategoryId = 'default';
-            }
-
-            renderTabs();
             renderGrid();
         });
     }
 
     function saveData() {
         chrome.storage.local.set({
-            hyperlinks: allLinks,
-            categories: categories,
-            activeCategoryId: activeCategoryId
+            hyperlinks: allLinks
         });
     }
 
@@ -106,12 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 allLinks[index].url = url;
             }
         } else {
-            // CREATE NEW LINK (add to active category)
+            // CREATE NEW LINK
             allLinks.push({
                 id: Date.now().toString(),
                 name: name,
-                url: url,
-                categoryId: activeCategoryId
+                url: url
             });
         }
 
@@ -125,71 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target === modal) closeModal();
     });
 
-    // --- 3. TAB (CATEGORY) LOGIC ---
-    function renderTabs() {
-        tabsContainer.innerHTML = '';
-
-        categories.forEach(cat => {
-            const tabEl = document.createElement('button');
-            tabEl.className = `category-tab ${cat.id === activeCategoryId ? 'active' : ''}`;
-            const safeCatName = escapeHtml(cat.name);
-
-            let actionsHtml = '';
-            if (cat.id !== 'default') {
-                actionsHtml = `
-                    <div class="tab-actions">
-                        <span class="tab-action-btn edit-btn" title="Rename">✎</span>
-                        <span class="tab-action-btn delete-tab-btn" title="Delete">×</span>
-                    </div>
-                `;
-            }
-
-            tabEl.innerHTML = `<span class="tab-name">${safeCatName}</span> ${actionsHtml}`;
-
-            tabEl.addEventListener('click', (e) => {
-                if (e.target.classList.contains('tab-action-btn')) return;
-
-                activeCategoryId = cat.id;
-                searchInput.value = '';
-                saveData();
-                renderTabs();
-                renderGrid();
-            });
-
-            if (cat.id !== 'default') {
-                tabEl.querySelector('.edit-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openTabEditModal(cat);
-                });
-
-                tabEl.querySelector('.delete-tab-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (confirm(`Delete the "${safeCatName}" tab and ALL its saved links?`)) {
-                        categories = categories.filter(c => c.id !== cat.id);
-                        allLinks = allLinks.filter(l => l.categoryId !== cat.id);
-                        activeCategoryId = 'default';
-                        saveData();
-                        renderTabs();
-                        renderGrid();
-                    }
-                });
-            }
-
-            tabsContainer.appendChild(tabEl);
-        });
-    }
-
-    // Custom modal for editing tab names (replaces prompt)
-    function openTabEditModal(cat) {
-        const newName = prompt('Enter new tab name:', cat.name);
-        if (newName && newName.trim().length > 0) {
-            cat.name = newName.trim();
-            saveData();
-            renderTabs();
-        }
-    }
-
-    // --- 4. LINK LOGIC ---
+    // --- 3. LINK LOGIC ---
     saveBtn.addEventListener('click', () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if (!tabs || !tabs[0]) return;
@@ -203,8 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newShortcut = {
                 id: Date.now().toString(),
                 name: truncatedTitle,
-                url: currentTab.url,
-                categoryId: activeCategoryId
+                url: currentTab.url
             };
 
             allLinks.push(newShortcut);
@@ -239,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (searchQuery) {
                 return link.name.toLowerCase().includes(searchQuery) || link.url.toLowerCase().includes(searchQuery);
             }
-            return link.categoryId === activeCategoryId;
+            return true;
         });
 
         // Show empty state if no links
